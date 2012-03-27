@@ -1548,6 +1548,23 @@ static void handle_connections() {
     exit(1);
 }
 
+void write_pid() {
+    FILE *pidfile = NULL;
+    int pidfd;
+
+    unlink(CONFIG->PID);
+    pidfd = open(CONFIG->PID, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (pidfd < 0)
+        fail("write_pid failed");
+
+    pidfile = fdopen(pidfd, "w");
+    if (pidfile != NULL) {
+        fprintf(pidfile, "%d\n", master_pid);
+        fflush(pidfile);
+        fclose(pidfile);
+    }
+}
+
 void change_root() {
     if (chroot(CONFIG->CHROOT) == -1)
         fail("chroot");
@@ -1849,6 +1866,9 @@ int main(int argc, char **argv) {
     }
 
     master_pid = getpid();
+
+    if (CONFIG->PID)
+        write_pid();
 
     start_children(0, CONFIG->NCORES);
 

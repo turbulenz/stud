@@ -38,6 +38,7 @@
 #define CFG_CHROOT "chroot"
 #define CFG_USER "user"
 #define CFG_GROUP "group"
+#define CFG_PID "pidfile"
 #define CFG_QUIET "quiet"
 #define CFG_SYSLOG "syslog"
 #define CFG_SYSLOG_FACILITY "syslog-facility"
@@ -141,6 +142,7 @@ stud_config * config_new (void) {
   r->SHCUPD_MCASTTTL    = NULL;
 #endif
 
+  r->PID                = NULL;
   r->QUIET              = 0;
   r->SYSLOG             = 0;
   r->SYSLOG_FACILITY    = LOG_DAEMON;
@@ -186,6 +188,8 @@ void config_destroy (stud_config *cfg) {
   if (cfg->SHCUPD_MCASTIF != NULL) free(cfg->SHCUPD_MCASTIF);
   if (cfg->SHCUPD_MCASTTTL != NULL) free(cfg->SHCUPD_MCASTTTL);
 #endif
+
+  if (cfg->PID != NULL) free(cfg->PID);
 
   free(cfg);
 }
@@ -628,6 +632,11 @@ void config_param_validate (char *k, char *v, stud_config *cfg, char *file, int 
       }
     }
   }
+  else if (strcmp(k, CFG_PID) == 0) {
+    if (v != NULL && strlen(v) > 0) {
+      config_assign_str(&cfg->PID, v);
+    }
+  }
   else if (strcmp(k, CFG_QUIET) == 0) {
     r = config_param_val_bool(v, &cfg->QUIET);
   }
@@ -909,6 +918,7 @@ void config_print_usage_fd (char *prog, stud_config *cfg, FILE *out) {
   fprintf(out, "  -g  --group=GROUP          Set gid after binding the socket (Default: \"%s\")\n", config_disp_gid(cfg->GID));
   fprintf(out, "\n");
   fprintf(out, "LOGGING:\n");
+  fprintf(out, "  -p  --pidfile=FILE         Write master PID to file\n");
   fprintf(out, "  -q  --quiet                Be quiet; emit only error messages\n");
   fprintf(out, "  -s  --syslog               Send log message to syslog in addition to stderr/stdout\n");
   fprintf(out, "  --syslog-facility=FACILITY Syslog facility to use (Default: \"%s\")\n", config_disp_log_facility(cfg->SYSLOG_FACILITY));
@@ -1067,6 +1077,12 @@ void config_print_default (FILE *fd, stud_config *cfg) {
   fprintf(fd, FMT_QSTR, CFG_GROUP, config_disp_gid(cfg->GID));
   fprintf(fd, "\n");
 
+  fprintf(fd, "# Write master PID to file\n");
+  fprintf(fd, "#\n");
+  fprintf(fd, "# type: string\n");
+  fprintf(fd, FMT_QSTR, CFG_PID, config_disp_str(cfg->PID));
+  fprintf(fd, "\n");
+
   fprintf(fd, "# Quiet execution, report only error messages\n");
   fprintf(fd, "#\n");
   fprintf(fd, "# type: boolean\n");
@@ -1157,6 +1173,7 @@ void config_parse_cli(int argc, char **argv, stud_config *cfg) {
     { CFG_CHROOT, 1, NULL, 'r' },
     { CFG_USER, 1, NULL, 'u' },
     { CFG_GROUP, 1, NULL, 'g' },
+    { CFG_PID, 1, NULL, 'p' },
     { CFG_QUIET, 0, NULL, 'q' },
     { CFG_SYSLOG, 0, NULL, 's' },
     { CFG_SYSLOG_FACILITY, 1, NULL, CFG_PARAM_SYSLOG_FACILITY },
@@ -1175,7 +1192,7 @@ void config_parse_cli(int argc, char **argv, stud_config *cfg) {
     int option_index = 0;
     c = getopt_long(
       argc, argv,
-      "c:e:Ob:f:n:B:C:U:P:M:k:r:u:g:qstVh",
+      "c:e:Ob:f:n:B:C:U:P:M:k:r:u:g:p:qstVh",
       long_options, &option_index
     );
 
@@ -1244,6 +1261,9 @@ void config_parse_cli(int argc, char **argv, stud_config *cfg) {
         break;
       case 'g':
         config_param_validate(CFG_GROUP, optarg, cfg, NULL, 0);
+        break;
+      case 'p':
+        config_param_validate(CFG_PID, optarg, cfg, NULL, 0);
         break;
       case 'q':
         config_param_validate(CFG_QUIET, CFG_BOOL_ON, cfg, NULL, 0);

@@ -63,6 +63,7 @@ struct __stud_config {
     char *SHCUPD_MCASTIF;
     char *SHCUPD_MCASTTTL;
 #endif
+    char *PID;
     int QUIET;
     int SYSLOG;
     int SYSLOG_FACILITY;
