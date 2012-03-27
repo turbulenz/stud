@@ -116,6 +116,7 @@ Detail about the entire set of options can be found by invoking `stud -h`:
       -g  --group=GROUP          Set gid after binding the socket (Default: "")
 
     LOGGING:
+      -p  --pidfile              Write master PID to file (Default: "")
       -q  --quiet                Be quiet; emit only error messages
       -s  --syslog               Send log message to syslog in addition to stderr/stdout
       --syslog-facility=FACILITY Syslog facility to use (Default: "daemon")
